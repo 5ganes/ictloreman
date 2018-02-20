@@ -8,7 +8,7 @@ class Users
 
  	$sql = "SELECT * FROM users u where u.username = :username AND u.status = :status";
  	$criteria = [
-  		'username' => cleanQuery($uname),
+  		'username' => $uname,
   		'status' => 'A'
   	];
   	$stmt = $conn->exec($sql, $criteria);
@@ -16,7 +16,7 @@ class Users
   		// die('hi');
   		$row = $stmt->fetch();
   		// print_r($row); die();
-  		if(password_verify(cleanQuery($pswd), $row['password'])){
+  		if(password_verify($pswd, $row['password'])){
 	   		$_SESSION['sessUserId'] = $row['id'];
 	   		$_SESSION['sessUsername'] = $row['username'];
 	   		$_SESSION['sessLastLogin'] = $row['lastLogin'];
@@ -85,36 +85,35 @@ class Users
   	$stmt = $conn -> exec($sql);
  }
 
- function validatePassword($id,$pswd)
- {
+ function validatePassword($id,$pswd){
  	global $conn;
-	
-  $sql = "SELECT COUNT(*) cnt FROM users WHERE id = '$id' AND password = '$pswd'";
-  //echo $sql;
-  $result = $conn -> exec($sql);
-  $row = $conn -> fetchArray($result);
-  if($row['cnt'] > 0)
-   return true;
-  else
-   return false;
+
+ 	$sql = "SELECT * FROM users u where id = :id";
+ 	$criteria = [
+  		'id' => $id
+  	];
+  	$stmt = $conn->exec($sql, $criteria);
+  	$row = $stmt->fetch();
+  	if(password_verify($pswd, $row['password'])) return true;
+  	else return false;
  }
 
- function updatePassword($id,$pswd)
- {
+ function updatePassword($id,$pswd){
  	global $conn;
-	
-  $sql = "UPDATE users SET password = '$pswd' WHERE id = '$id'";
-  //echo $sql;
-  $result = $conn -> exec($sql);
-  $affRows = $conn -> affRows();
-  if($affRows)
-   return true;
-  else
-   return false;
+	$sql = "UPDATE users SET password = :pswd WHERE id = :id";
+	$criteria = [
+  		'id' => $id,
+  		'pswd' => password_hash($pswd, PASSWORD_DEFAULT)
+  	];
+	$stmt = $conn -> exec($sql, $criteria);
+	$affRows = $conn -> affRows($stmt);
+	if($affRows)
+		return true;
+	else
+	  	return false;
  }
  
- function getSubLastWeight()
- {
+ function getSubLastWeight(){
 	global $conn;
 	$sql = "SElECT max(weight) FROM usergroups";
 	$result = $conn->exec($sql);
@@ -128,8 +127,7 @@ class Users
 		return 10;	 
  }
  
- function saveUser($id, $name, $username, $password, $district, $email, $phone, $website, $user_type, $org_info, $publish, $weight)
-	{
+ function saveUser($id, $name, $username, $password, $district, $email, $phone, $website, $user_type, $org_info, $publish, $weight){
 		global $conn;
 		$id = cleanQuery($id);
 		$name = cleanQuery($name);

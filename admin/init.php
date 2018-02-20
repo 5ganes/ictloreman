@@ -9,18 +9,18 @@ require_once("../data/conn.php");
 require_once("../data/users.php");
 require_once("../data/groups.php");
 require_once("../data/listingfiles.php");
-require_once("../data/enewsletters.php");
-require_once("../data/testimonials.php");
+// require_once("../data/enewsletters.php");
+// require_once("../data/testimonials.php");
 require_once("../data/feedbacks.php");
-require_once("../data/program.php");
-$program = new Program();
+// require_once("../data/program.php");
+// $program = new Program();
 
 $conn 					= new Dbconn();		
 $users	 				= new Users();	
 $groups					= new Groups();
 $listingFiles		= new ListingFiles();
-$enewsletters			= new Enewsletters();
-$testimonials		= new Testimonials();
+// $enewsletters			= new Enewsletters();
+// $testimonials		= new Testimonials();
 $feedbacks			= new Feedbacks();
 
 // define (ADMIN_GALLERY_LIMIT,20);

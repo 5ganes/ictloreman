@@ -34,9 +34,9 @@
 			return $stmt->rowCount();			
 		}
 		
-		function affRows()
+		function affRows($stmt)
 		{
-			return $this->links->rowCount();			
+			return $stmt->rowCount();			
 		}
 		
 		function insertId()

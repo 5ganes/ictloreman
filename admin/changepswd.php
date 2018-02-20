@@ -1,53 +1,43 @@
 <?php
 include("init.php");
-if(!isset($_SESSION['sessUserId']))//User authentication
-{
- header("Location: login.php");
- exit();
+if(!isset($_SESSION['sessUserId'])){ //User authentication
+  header("Location: login.php");
+  exit();
 }
 
-if(isset($_POST['btnSubmit']))
-{
- $errMsg = "";
- $opsw = trim($_POST['old_psw']);
- $npsw = trim($_POST['new_psw']);
- $cnpsw = trim($_POST['conf_new_psw']);
+if(isset($_POST['btnSubmit'])){
+  $errMsg = "";
+  $opsw = trim($_POST['old_psw']);
+  $npsw = trim($_POST['new_psw']);
+  $cnpsw = trim($_POST['conf_new_psw']);
 
- if(empty($opsw))
- {
-  $errMsg .= "<li>Please, supply your old password</li>";
- }
- elseif(isset($_SESSION['sessUsername']))
- {
-  if(!$users -> validatePassword($_SESSION['sessUserId'],$opsw))
-  {
-   $errMsg .= "<li>Please, supply your valid old password</li>";
+  if(empty($opsw)){
+    $errMsg .= "<li>Please, supply your old password</li>";
   }
- }
- if(empty($npsw))
- {
-  $errMsg .= "<li>Please, supply your new password</li>";
- }
- if(empty($cnpsw))
- {
-  $errMsg .= "<li>Please, confirm your new password</li>";
- }
- if($npsw != $cnpsw)
- {
-  $errMsg .= "<li>Please, supply matching confirm password</li>";
- }
- if(isset($_SESSION['sessUsername']))
- {
-  if(empty($errMsg))
-  {
-   $chPsw = $users -> updatePassword($_SESSION['sessUserId'],$npsw);
-   if($chPsw)
-   {
-    header("Location: changepswd.php?msg=Password updated successfully");
-		exit();
-   }
+  elseif(isset($_SESSION['sessUsername'])){
+    if(!$users -> validatePassword($_SESSION['sessUserId'],$opsw)){
+      $errMsg .= "<li>Please, supply your valid old password</li>";
+    }
   }
- }
+  if(empty($npsw)){
+    $errMsg .= "<li>Please, supply your new password</li>";
+  }
+  if(empty($cnpsw)){
+    $errMsg .= "<li>Please, confirm your new password</li>";
+  }
+  if($npsw != $cnpsw){
+    $errMsg .= "<li>Please, supply matching confirm password</li>";
+  }
+  if(isset($_SESSION['sessUsername'])){
+    if(empty($errMsg))
+    {
+      $chPsw = $users -> updatePassword($_SESSION['sessUserId'],$npsw);
+      if($chPsw){
+        header("Location: changepswd.php?msg=Password updated successfully");
+		    exit();
+      }
+    }
+  }
 }
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
