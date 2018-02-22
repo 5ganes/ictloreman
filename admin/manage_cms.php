@@ -6,34 +6,31 @@ if(!isset($_SESSION['sessUserId']))//User authentication
  exit();
 }
 
-function saveImages($xid, $files, $captionList)
-{
- global $groups;
- 
-	for ($i=0; $i<count($files['galimage']['name']); $i++)
- {
-  if(isset($files['galimage']['tmp_name'][$i]) && $files['galimage']['size'][$i] <= (1024*1024))
-  {
-   $ft = $files['galimage']['type'][$i];
-   if($ft == "image/jpeg" || $ft == "image/jpg" || $ft == "image/pjpeg")
-   {
-    $ext = "jpg";
-   }
-   else if ($ft == "image/gif")
-    $ext = "gif";
-   else if ($ft == "image/png" || $ft == "image/x-png")
-    $ext = "png";
-
-   if ($ext == "jpg" || $ext == "gif" || $ext == "png")
-   {
-       $photoId = $groups->saveGallerySub("", $xid, $captionList[$i]);
-			 $groups -> updateUrlName($photoId);
-			 $groups -> updateImage($photoId, $photoId . "." . $ext);
-  
-       copy($files['galimage']['tmp_name'][$i], "../" . CMS_GROUPS_DIR . $photoId . "." . $ext);
-   }
-  }
- }
+function saveImages($xid, $files, $captionList){
+ 	global $groups;
+	for ($i=0; $i<count($files['galimage']['name']); $i++){
+  		if(isset($files['galimage']['tmp_name'][$i]) && $files['galimage']['size'][$i] <= (1024*1024)){
+   			$ft = $files['galimage']['type'][$i];
+   			if($ft == "image/jpeg" || $ft == "image/jpg" || $ft == "image/pjpeg"){
+    			$ext = "jpg";
+   			}
+   			else if ($ft == "image/gif")
+    			$ext = "gif";
+   			else if ($ft == "image/png" || $ft == "image/x-png")
+    			$ext = "png";
+			if ($ext == "jpg" || $ext == "gif" || $ext == "png"){
+				$criteria = [
+					'id' => '',
+					'parentId' => $xid,
+					'shortcontents' => $captionList[$i]
+				];
+       			$photoId = $groups->saveGallerySub($criteria);
+			 	$groups -> updateUrlName($photoId);
+			 	$groups -> updateImage($photoId, $photoId . "." . $ext);
+  				copy($files['galimage']['tmp_name'][$i], "../" . CMS_GROUPS_DIR . $photoId . "." . $ext);
+   			}
+  		}
+ 	}
 }
 
 function saveListingImage($photoId)
@@ -66,17 +63,19 @@ function saveListingImage($photoId)
 
 function saveListFiles($listingId, $files, $captionList)
 {
- global $listings;
- global $listingFiles;
- 
- for ($i=0; $i<count($files['listFile']['name']); $i++)
- {
- 	 if ($files['listFile']['size'][$i] > 0)
-	 {
-    $listingFiles->save($listingId, $captionList[$i], $files['listFile']['name'][$i]);
-    copy($files['listFile']['tmp_name'][$i], "../" . CMS_LISTING_FILES_DIR . $files['listFile']['name'][$i]);
-	 }
- }
+ 	global $listings;
+ 	global $listingFiles;
+ 	for ($i=0; $i<count($files['listFile']['name']); $i++){
+ 	 	if ($files['listFile']['size'][$i] > 0){
+ 	 		$criteria = [
+ 	 			'listingId' => $listingId,
+ 	 			'caption' => $captionList[$i],
+ 	 			'filename' => $files['listFile']['name'][$i]
+ 	 		];
+   	 		$listingFiles->save($criteria);
+    		copy($files['listFile']['tmp_name'][$i], "../" . CMS_LISTING_FILES_DIR . $files['listFile']['name'][$i]);
+	 	}
+ 	}
 }
 
 function saveGroupImage($groupId)
@@ -141,8 +140,8 @@ if (isset($_POST['save']))
   {
     if (isset($_FILES['uploadFile']['name']))
     {
-			$groupResult = $groups->getById($_POST['id']);
-			$groupRow = $conn->fetchArray($groupResult);
+			$groupRow = $groups->getById($_POST['id']);
+			// $groupRow = $conn->fetchArray($groupResult);
 			$oldFilename = $groupRow['contents'];
 
 			if(!empty($_FILES['uploadFile']['name']))
@@ -162,18 +161,33 @@ if (isset($_POST['save']))
   {
   	saveImages($_POST['id'], $_FILES, $_POST['imageCaption']);
 	 	
-		for ($i=0; $i < count($_POST['oldCaptionIds']); $i++)
-		{
-		 $groups->saveGallerySub($_POST['oldCaptionIds'][$i], "", $_POST['oldCaptions'][$i]);
+		for ($i=0; $i < count($_POST['oldCaptionIds']); $i++){
+			$criteria = [
+				'id' => $_POST['oldCaptionIds'][$i],
+				'parentId' => '',
+				'shortcontents' => $_POST['oldCaptions'][$i]
+			];
+		 	$groups->saveGallerySub($criteria);
 		}
   }
   else if ($_POST['linkType'] == "List")
   {
 	 if($groups -> isUnique($_POST['listId'], $_POST['listUrlTitle']) && !empty($_POST['listUrlTitle']))
 	 { 
-   if (isset($_POST['listId']))
-   {
-   	$groups->saveListSub($_POST['listId'], $_POST['listTitle'], $_POST['listUrlTitle'], $_POST['id'], $_POST['listShortDescription'], $_POST['listDescription'], $_POST['listMain'], $_POST['listWeight'], $_POST['listPageTitle'], $_POST['listPageKeyword']);
+   if (isset($_POST['listId'])){
+   		$criteria = [
+			'id' => $_POST['listId'],
+			'name' => $_POST['listTitle'],
+			'urlname' => $_POST['listUrlTitle'],
+			'parentId' => $_POST['id'],
+			'shortcontents' => $_POST['listShortDescription'],
+			'contentsen' => $_POST['listDescription'],
+			'featured' => $_POST['listMain'],
+			'weight' => $_POST['listWeight'],
+			'pageTitle' => $_POST['listPageTitle'],
+			'pageKeyword' => $_POST['listPageKeyword']
+		];
+   		$groups->saveListSub($criteria);
 		
 		$ext = saveListingImage($_POST['listId']);
 		if (!empty($ext))
@@ -183,9 +197,20 @@ if (isset($_POST['save']))
    }
    else
    {
-   	if (!empty($_POST['listTitle']))
-   	{
-   		$newListId = $groups->saveListSub("", $_POST['listTitle'], $_POST['listUrlTitle'], $_POST['id'], $_POST['listShortDescription'], $_POST['listDescription'], $_POST['listMain'], $_POST['listWeight'], $_POST['listPageTitle'], $_POST['listPageKeyword']);
+   	if (!empty($_POST['listTitle'])){
+   		$criteria = [
+			'id' => '',
+			'name' => $_POST['listTitle'],
+			'urlname' => $_POST['listUrlTitle'],
+			'parentId' => $_POST['id'],
+			'shortcontents' => $_POST['listShortDescription'],
+			'contentsen' => $_POST['listDescription'],
+			'featured' => $_POST['listMain'],
+			'weight' => $_POST['listWeight'],
+			'pageTitle' => $_POST['listPageTitle'],
+			'pageKeyword' => $_POST['listPageKeyword']
+		];
+   		$newListId = $groups->saveListSub($criteria);
 			$ext = saveListingImage($newListId);
 			if (!empty($ext))
    			$groups->updateImage($newListId, $newListId . "." . $ext);
@@ -203,23 +228,50 @@ if (isset($_POST['save']))
   {
 		for ($i=0; $i<count($_POST['videoUrl']); $i++)
 		{
-			if(!empty($_POST['videoUrl'][$i]))
-			{
-				$vid = $groups -> saveVideoSub("", $_POST['id'], $_POST['videoUrl'][$i]);
+			if(!empty($_POST['videoUrl'][$i])){
+				$criteria = [
+					'id' => '',
+					'parentId' => $_POST['id'],
+					'contents' => $_POST['videoUrl'][$i]
+				];
+				$vid = $groups -> saveVideoSub($criteria);
 				$groups -> updateUrlName($vid);
 			}
 		}
 		
 		for ($i=0; $i < count($_POST['oldVideoIds']); $i++)
 		{
-			if(!empty($_POST['oldUrls'][$i]))
+			if(!empty($_POST['oldUrls'][$i])){
+				$criteria = [
+					'id' => $_POST['oldVideoIds'][$i],
+					'parentId' => '',
+					'contents' => $_POST['oldUrls'][$i]
+				];
 			 	$groups -> saveVideoSub($_POST['oldVideoIds'][$i], "", $_POST['oldUrls'][$i]);
+			}
 		}
   }	
 	
-  if($groups -> isUnique($_POST['id'], $_POST['urlname']) && !empty($_POST['urlname']))
-	{
-		$groups->save($_POST['id'], $_POST['name'], $_POST['nameen'], $_POST['urlname'], "",  $_POST['parentId'], "", $shortcontents, $shortcontentsen, $contents, $contentsen, $_POST['weight'], $_POST['pageTitle'], $_POST['pageKeyword'], $_POST['featured'], $_POST['display']);
+  	if($groups -> isUnique($_POST['id'], $_POST['urlname']) && !empty($_POST['urlname'])){
+  		$criteria = [
+  			'id' => $_POST['id'],
+ 			'name' => $_POST['name'],
+ 			'nameen' => $_POST['nameen'],
+ 			'urlname' => $_POST['urlname'],
+ 			'type' => '',
+ 			'parentId' => $_POST['parentId'],
+ 			'linkType' => '',
+ 			'shortcontents' => $shortcontents,
+ 			'shortcontentsen' => $shortcontentsen,
+ 			'contents' => $contents,
+ 			'contentsen' => $contentsen,
+ 			'weight' => $_POST['weight'],
+ 			'pageTitle' => $_POST['pageTitle'],
+ 			'pageKeyword' => $_POST['pageKeyword'],
+ 			'featured' => $_POST['featured'],
+ 			'display' => $_POST['display']
+  		];
+		$groups->save($criteria);
 		
 		$groups -> saveImage($_POST['id']);
 		
@@ -233,10 +285,10 @@ if (isset($_POST['save']))
 			$url .= "&id=". $_POST['id'];
 		if(isset($_GET['page']))
 			$url .= "&page=".$_GET['page'];
-	
+
 		header ("Location: " . $url ."&msg=Successfully updated!");
 		exit();
-	 }
+	}
  }
 ////////////////
 // ADD NEW //// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -251,21 +303,34 @@ else //add new code goes here...
 	elseif($_POST['linkType'] == "select")
 		$msg = "Please selet Type";
 	
- 	if(empty($msg))
-	{
-		$newId = $groups->save("", $_POST['name'], $_POST['nameen'], $_POST['urlname'], $_GET['groupType'], $_POST['parentId'], $_POST['linkType'], $shortcontents, $shortcontentsen, $contents, $contentsen, $_POST['weight'], $_POST['pageTitle'], $_POST['pageKeyword'], $_POST['featured'], $_POST['display']);
-		
+ 	if(empty($msg)){
+ 		$criteria = [
+ 			'id' => '',
+ 			'name' => $_POST['name'],
+ 			'nameen' => $_POST['nameen'],
+ 			'urlname' => $_POST['urlname'],
+ 			'type' => $_GET['groupType'],
+ 			'parentId' => $_POST['parentId'],
+ 			'linkType' => $_POST['linkType'],
+ 			'shortcontents' => $shortcontents,
+ 			'shortcontentsen' => $shortcontentsen,
+ 			'contents' => $contents,
+ 			'contentsen' => $contentsen,
+ 			'weight' => $_POST['weight'],
+ 			'pageTitle' => $_POST['pageTitle'],
+ 			'pageKeyword' => $_POST['pageKeyword'],
+ 			'featured' => $_POST['featured'],
+ 			'display' => $_POST['display']
+ 		];
+		$newId = $groups->save($criteria);
 		$groups->saveImage($newId);
 			
-		if ($_POST['linkType'] == "File")
-		{
-			if (isset($_FILES['uploadFile']['name']))
-			{
-			 copy($_FILES['uploadFile']['tmp_name'], "../" . CMS_FILES_DIR . $_FILES['uploadFile']['name']);
+		if ($_POST['linkType'] == "File"){
+			if (isset($_FILES['uploadFile']['name'])){
+			 	copy($_FILES['uploadFile']['tmp_name'], "../" . CMS_FILES_DIR . $_FILES['uploadFile']['name']);
 			}
 		}		
-		else if ($_POST['linkType'] == "List")
-		{
+		else if ($_POST['linkType'] == "List"){
 			$msg = "";
 			if(empty($_POST['listTitle']))
 				$msg = "Please enter Title";
@@ -274,9 +339,20 @@ else //add new code goes here...
 			elseif(!$groups -> isUnique(0, $_POST['listUrlTitle']))
 				$msg = "Alias Title already exists";
 
-			if (empty($msg))
-			{
-				$newListId = $groups->saveListSub("", $_POST['listTitle'], $_POST['listUrlTitle'], $newId, $_POST['listShortDescription'], $_POST['listDescription'], $_POST['listMain'], $_POST['listWeight'], $_POST['listPageTitle'], $_POST['listPageKeyword']);
+			if (empty($msg)){
+				$criteria = [
+					'id' => '',
+					'name' => $_POST['listTitle'],
+					'urlname' => $_POST['listUrlTitle'],
+					'parentId' => $newId,
+					'shortcontents' => $_POST['listShortDescription'],
+					'contentsen' => $_POST['listDescription'],
+					'featured' => $_POST['listMain'],
+					'weight' => $_POST['listWeight'],
+					'pageTitle' => $_POST['listPageTitle'],
+					'pageKeyword' => $_POST['listPageKeyword']
+				];
+				$newListId = $groups->saveListSub($criteria);
 				$ext = saveListingImage($newListId);
 				if (!empty($ext))
 					$groups->updateImage($newListId, $newListId ."." .$ext);
@@ -288,17 +364,27 @@ else //add new code goes here...
 		{
 			saveImages($newId, $_FILES, $_POST['imageCaption']);
 			
-			for ($i=0; $i < count($_POST['oldCaptionIds']); $i++)
-			{
-			 $groups->saveGallerySub($_POST['oldCaptionIds'][$i], "", $_POST['oldCaptions'][$i]);
+			for ($i=0; $i < count($_POST['oldCaptionIds']); $i++){
+				$criteria = [
+					'id' => $_POST['oldCaptionIds'][$i],
+					'parentId' => '',
+					'shortcontents' => $_POST['oldCaptions'][$i]
+				];
+			 	$groups->saveGallerySub($criteria);
 			}
 		}
 		else if ($_POST['linkType'] == "Video Gallery")
 		{
 			for ($i=0; $i<count($_POST['videoUrl']); $i++)
 			{
-				if(!empty($_POST['videoUrl'][$i]))
-					$groups -> saveVideoSub("", $newId, $_POST['videoUrl'][$i]);
+				if(!empty($_POST['videoUrl'][$i])){
+					$criteria = [
+						'id' => '',
+						'parentId' => $newId,
+						'contents' => $_POST['videoUrl'][$i]
+					];
+					$groups -> saveVideoSub($criteria);
+				}
 			}			
 		}
 	
@@ -372,10 +458,10 @@ else if (isset($_GET['id']) && isset($_GET['delete']))
 }
 else if (isset($_GET['imageId']) && isset($_GET['deleteImage']))
 {
- $groups->delete($_GET['imageId']);
- $msg = "Image deleted!";
- header ("Location: cms.php?id=". $_GET['id'] ."&groupType=". $_GET['groupType'] ."&parentId=". $_GET['parentId'] ."&msg=" . $msg);
- exit();
+	 $groups->delete($_GET['imageId']);
+	 $msg = "Image deleted!";
+	 header ("Location: cms.php?id=". $_GET['id'] ."&groupType=". $_GET['groupType'] ."&parentId=". $_GET['parentId'] ."&msg=" . $msg);
+	 exit();
 }
 else if (isset($_GET['deleteListId']))
 {

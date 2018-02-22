@@ -1,18 +1,15 @@
 <?php
-class ListingFiles
-{
- function save($listingId, $caption, $filename)
- {
+class ListingFiles{
+ function save($record){
   global $conn;
-  
+  extract($record);
   $sql = "INSERT INTO listingfiles
 					SET
-						listingId = '" . cleanQuery($listingId) . "',
-						caption = '" . cleanQuery($caption) ."',
-						filename='" . cleanQuery($filename) ."',
+						listingId = :listingId,
+						caption = :caption,
+						filename= :filename,
 						onDate = NOW()";
   $conn->exec($sql);
-  
   return $conn->insertId();
  }
  

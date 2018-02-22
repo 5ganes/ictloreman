@@ -69,10 +69,9 @@ class Pager
 //$db=new Dbconn();
 
 $sqlord=$sql;
-$rsord = mysql_query($sqlord);
-if($rsord)
-{
- $cntorder=mysql_num_rows($rsord);
+$rsord = $conn->PDOQuery($sqlord);
+if($rsord){
+  $cntorder=$rsord->rowCount();
 }
 $p = new Pager();
 $p->pagename = $pagename;
@@ -95,7 +94,7 @@ else
 {
 */
 $sql.=" LIMIT ".$start.", ".$limit;
-$result = mysql_query($sql);
+$result = $conn->PDOQuery($sql);
 //}
 
 $pagelist = $p->pageList($page, $pages);

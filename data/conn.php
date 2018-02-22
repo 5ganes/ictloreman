@@ -17,8 +17,14 @@
 		}
 		
 		function exec($sql, $criteria){
+			// echo '<pre>'; echo $sql; print_r($criteria); //die();
 			$stmt = $this->links->prepare($sql);
 			$stmt->execute($criteria);
+			return $stmt;
+		}
+
+		function PDOQuery($sql){
+			$stmt = $this->links->query($sql);
 			return $stmt;
 		}
 		

@@ -1,30 +1,22 @@
 <?php
-include("init.php");
-if(!isset($_SESSION['sessUserId']))//User authentication
-{
- header("Location: login.php");
- exit();
-}
-
-$showSaveForm = false;
-$showListing = false;
-
-if (isset($_GET['id']))
-{
-	$groupResult = $groups->getById($_GET['id']);
-	$groupRow = $conn->fetchArray($groupResult);
-
-	$selectedGroupType = $groupRow['type'];
-
-	$showSaveForm = true;
-	$showListing = true;
-}
-if (isset($_GET['groupType']))
-{
-	$selectedGroupType = $_GET['groupType'];
-	$showSaveForm = true;
-	$showListing = true;
-}
+	include("init.php");
+	if(!isset($_SESSION['sessUserId'])){ //User authentication
+		header("Location: login.php");
+	 	exit();
+	}
+	$showSaveForm = false;
+	$showListing = false;
+	if (isset($_GET['id'])){
+		$groupRow = $groups->getById($_GET['id']);
+		$selectedGroupType = $groupRow['type'];
+		$showSaveForm = true;
+		$showListing = true;
+	}
+	if (isset($_GET['groupType'])){
+		$selectedGroupType = $_GET['groupType'];
+		$showSaveForm = true;
+		$showListing = true;
+	}
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>

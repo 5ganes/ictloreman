@@ -15,8 +15,8 @@ class Groups
 						urlname = :urlname,
 						parentId = :parentId,
 						shortcontents = :shortcontents,
-						contents = :contents,
 						shortcontentsen = :shortcontentsen,
+						contents = :contents,
 						contentsen = :contentsen,
 						weight = :weight,
 						pageTitle = :pageTitle,
@@ -25,12 +25,11 @@ class Groups
 						display = :display
 					WHERE
 						id = :id";
-			unset($criteria['groupType']);
+			unset($criteria['type']);
 			unset($criteria['linkType']);
 		}
 		else{
-			$sql = "INSERT INTO groups 
-					SET
+			$sql = "INSERT INTO groups SET
 						name = :name,
 						nameen = :nameen,
 						urlname = :urlname,
@@ -38,99 +37,92 @@ class Groups
 						parentId = :parentId,
 						linkType = :linkType,
 						shortcontents = :shortcontents,
-						contents = :contents,
 						shortcontentsen = :shortcontentsen,
+						contents = :contents,
 						contentsen = :contentsen,
 						weight = :weight,
 						pageTitle = :pageTitle,
 						pageKeyword = :pageKeyword,
 						featured = :featured,
 						display = :display,
-						onDate = :now";
+						onDate = NOW()";
 			unset($criteria['id']);
-			$criteria['now'] = $now;
+			//$criteria['now'] = $now;
 		}
+		// echo '<pre>'; echo $sql; print_r($criteria); die();
+		$stmt = $conn->exec($sql, $criteria);
+		// print_r($stmt); die();
+		if($id > 0)
+			return $conn -> affRows($stmt);
+		return $conn->insertId();
+	}
 		
+	function saveListSub($record){
+		$criteria = $record;
+		extract($record);
+		global $conn;
+		if($id > 0){
+			$sql = "UPDATE groups
+					SET
+						name = :name,
+						urlname = :urlname,
+						parentId=:parentId,
+						shortcontents = :shortcontents,
+						contents = :contents,
+						featured = :featured,
+						weight = :weight,
+						pageTitle = :pageTitle,
+						pageKeyword = :pageKeyword
+					WHERE
+						id = id";
+		}
+		else{
+			$sql = "INSERT INTO groups 
+					SET
+						name = :name,
+						urlname = :urlname,
+						parentId=:parentId,
+						linkType = :ListSub,
+						shortcontents = :shortcontents,
+						contents = :contents,
+						featured = :featured,
+						weight = :weight,
+						pageTitle = :pageTitle,
+						pageKeyword = :pageKeyword,
+						onDate = NOW()";
+			unset($criteria['id']);
+			$criteria['ListSub'] = 'ListSub';
+		}
 		$stmt = $conn->exec($sql, $criteria);
 		if($id > 0)
 			return $conn -> affRows();
 		return $conn->insertId();
 	}
-		
-	function saveListSub($id, $name, $urlname, $parentId, $shortcontents, $contents, $featured, $weight, $pageTitle, $pageKeyword)
-	{
-		global $conn;
-		
-		$id = cleanQuery($id);
-		$name = cleanQuery($name);
-		$urlname = cleanQuery($urlname);
-		$parentId = cleanQuery($parentId);
-		$shortcontents = cleanQuery($shortcontents);
-		$contents = cleanQuery($contents);
-		$featured = cleanQuery($featured);
-		$weight = cleanQuery($weight);
-		$pageTitle = cleanQuery($pageTitle);
-		$pageKeyword = cleanQuery($pageKeyword);
-		
-		if($id > 0)
-		$sql = "UPDATE groups
-						SET
-							name = '$name',
-							urlname = '$urlname',
-							parentId='$parentId',
-							shortcontents = '$shortcontents',
-							contents = '$contents',
-							featured = '$featured',
-							weight = '$weight',
-							pageTitle = '$pageTitle',
-							pageKeyword = '$pageKeyword'
-						WHERE
-							id = '$id'";
-		else
-		$sql = "INSERT INTO groups 
-						SET
-							name = '$name',
-							urlname = '$urlname',
-							parentId='$parentId',
-							linkType = 'ListSub',
-							shortcontents = '$shortcontents',
-							contents = '$contents',
-							featured = '$featured',
-							weight = '$weight',
-							pageTitle = '$pageTitle',
-							pageKeyword = '$pageKeyword',
-							onDate = NOW()";
-
-		$conn->exec($sql);
-		if($id > 0)
-			return $conn -> affRows();
-		return $conn->insertId();
-	}
 	
 	
-	function saveGallerySub($id, $parentId, $shortcontents)
-	{
-		global $conn;
-		
-		$id = cleanQuery($id);
-		$parentId = cleanQuery($parentId);
-		$shortcontents = cleanQuery($shortcontents);
-		
-		if($id > 0)
-		$sql = "UPDATE groups
+	function saveGallerySub($record){
+		$criteria = $record;
+		extract($record);
+		global $conn;		
+		if($id > 0){
+			$sql = "UPDATE groups
 						SET
-							shortcontents = '$shortcontents'
+							shortcontents = :shortcontents
 						WHERE
-							id = '$id'";
-		else
+							id = :id";
+			unset($criteria['parentId']);
+		}
+		else{
 		$sql = "INSERT INTO groups 
 						SET
-							parentId='$parentId',
-							linkType = 'GallerySub',
-							shortcontents = '$shortcontents',
+							parentId=:parentId,
+							linkType = :GallerySub,
+							shortcontents = :shortcontents,
 							onDate = NOW()";
-
-		$conn->exec($sql);
+			unset($criteria['id']);
+			$criteria['GallerySub'] = 'GallerySub';
+		}
+		$stmt = $conn->exec($sql, $criteria);
 		if($id > 0)
 			return $conn -> affRows();
 		return $conn->insertId();
@@ -596,25 +588,21 @@ class Groups
 		return $conn->insertId();
 	}	
 	
-	function saveImage($id)
-	{
+	function saveImage($id){
 		global $conn;
 		global $_FILES;
-		
 		if ($_FILES['image']['size'] <= 0)
 			return;
-		
-		$id = cleanQuery($id);
 		$filename = $_FILES['image']['name'];
-		
-		/*$ext = end(explode(".", $filename));
-		$image = $id . "." . $ext;*/
 		$image = $filename;
-		
 		copy($_FILES['image']['tmp_name'], "../". CMS_GROUPS_DIR . $image);
 		
-		$sql = "UPDATE groups SET image = '$image' WHERE id = '$id'";
-		$conn->exec($sql);
+		$sql = "UPDATE groups SET image = :image WHERE id = :id";
+		$criteria = [
+			'image' => $image,
+			'id' => $id
+		];
+		$conn->exec($sql, $criteria);
 	}
 	
 	
@@ -660,15 +648,15 @@ class Groups
 		$conn->exec($sql);
 	}
 	
-	function updateImage($id, $image)
-	{
+	function updateImage($id, $image){
 		global $conn;
 		
-		$id = cleanQuery($id);
-		$image = cleanQuery($image);
-		
-		$sql = "UPDATE groups SET image = '$image' WHERE id = '$id'";
-		$conn->exec($sql);
+		$sql = "UPDATE groups SET image = :image WHERE id = :id";
+		$criteria = [
+			'image' => $image,
+			'id' => $id
+		];
+		$conn->exec($sql, $criteria);
 	}
 	
 	function updateUrlName($id)
@@ -718,13 +706,11 @@ class Groups
 	function getById($id)
 	{
 		global $conn;
-
-		$id = cleanQuery($id);
-
-		$sql = "SElECT * FROM groups WHERE id = '$id'";
-		$result = $conn->exec($sql);
-		
-		return $result;
+		$criteria = [
+			'id' => $id
+		];
+		$stmt = $conn->exec("SElECT * FROM groups WHERE id = :id", $criteria);
+		return $stmt->fetch();
 	}
 
 	function getByIdResult($id)
@@ -751,29 +737,26 @@ class Groups
 		return $result;
 	}
 		
-	function getByParentId($parentId)
-	{
+	function getByParentId($parentId){
 		global $conn;
-		
-		$parentId = cleanQuery($parentId);
-		
-		$sql = "SElECT * FROM groups WHERE parentId = '$parentId' ORDER BY weight";
-		$result = $conn->exec($sql);
-		
-		return $result;
+		$sql = "SElECT * FROM groups WHERE parentId = :parentId ORDER BY weight";
+		$criteria = [
+			'parentId' => $parentId
+		];
+		$stmt = $conn->exec($sql, $criteria);
+		return $stmt;
 	}
 	
 	function getByParentIdAndType($id, $type)
 	{
 		global $conn;
-		
-		$id = cleanQuery($id);
-		$type = cleanQuery($type);
-		
-		$sql = "SElECT * FROM groups WHERE `type` = '$type' AND parentId = '$id' ORDER BY weight";
-		$result = $conn->exec($sql);
-		
-		return $result;
+		$sql = "SElECT * FROM groups WHERE type = :type AND parentId = :parentId ORDER BY weight";
+		$criteria = [
+			'type' => $type,
+			'parentId' => $id
+		];
+		$stmt = $conn->exec($sql, $criteria);
+		return $stmt;
 	}
 	
 	function getByParentIdAndLinkType($id, $linkType)
@@ -890,48 +873,39 @@ class Groups
 	}
 	
 	
-	function delete($id)
-	{  
+	function delete($id){  
 		global $conn;
-		
-		$id = cleanQuery($id);
-		
-		$result = $this->getById($id);
-		$row = $conn->fetchArray($result);
-		
+		$row = $this->getById($id);
+
 		$file = "../" . CMS_GROUPS_DIR . $row['image'];
 		
 		if (file_exists($file) && !empty($row['image']))
 			unlink($file);
 	
-		if ($row['linkType'] == "File")
-		{
+		if ($row['linkType'] == "File"){
 			$file = "../" . CMS_FILES_DIR . $row['contents'];
 			
 			if (file_exists($file) && !empty($row['contents']))
 				unlink($file);
 		}
-		else if ($row['linkType'] == "List")
-		{
-			$lResult = $this -> getByParentId($id);
-			while ($lRow = $conn->fetchArray($lResult))
+		else if ($row['linkType'] == "List"){
+			$lResultStmt = $this -> getByParentId($id);
+			foreach ($lResultStmt as $lRow)
 				$this->delete($lRow['id']);
 		}
-		else if ($row['linkType'] == "Gallery")
-		{
-			$gResult = $this->getByParentId($id);
-			while ($gRow = $conn->fetchArray($gResult))
+		else if ($row['linkType'] == "Gallery"){
+			$gResultStmt = $this->getByParentId($id);
+			foreach ($gResultStmt as $gRow)
 				$this->delete($gRow['id']);
 		}
-		else if ($row['linkType'] == "Video Gallery")
-		{
-			$gResult = $this->getByParentId($id);
-			while ($gRow = $conn->fetchArray($gResult))
+		else if ($row['linkType'] == "Video Gallery"){
+			$gResultStmt = $this->getByParentId($id);
+			foreach ($gResultStmt as $gRow)
 				$this->delete($gRow['id']);
 		}
-		
-		$sql = "DELETE FROM groups WHERE id = '$id'";
-		$conn->exec($sql);
+		$sql = "DELETE FROM groups WHERE id = :id";
+		$criteria = [ 'id' => $id ];
+		$conn->exec($sql, $criteria);
 	}	
 	
 	function getByParentIdWithLimit($parentId, $limit)
@@ -967,29 +941,35 @@ class Groups
 		return $result;
 	}
 	
-	function getNameById($id)
-	{
+	function getNameById($id){
 		global $conn;
-		
-		$sql = "SElECT * FROM groups WHERE id = '$id'";
-		$result = $conn->exec($sql);
-		$row = $conn->fetchArray($result);
+		$criteria = [
+			'id' => $id
+		];
+		$sql = "SElECT * FROM groups WHERE id = :id";
+		$stmt = $conn->exec($sql, $criteria);
+		$row = $stmt->fetch();
 		return $row['name'];
 	}
 
-	function comboRecursion($parentId, $selectedId, $times)
-	{
+	function comboRecursion($parentId, $selectedId, $times){
 		global $conn;	
+		if (is_numeric($parentId)){
+			$sql = "SELECT * FROM groups WHERE parentId = :parentId ORDER BY weight";
+			$criteria = [
+				'parentId' => $parentId
+			];
+		}
+		else{
+			$sql = "SELECT * FROM groups WHERE parentId = :parentId AND type = :type ORDER BY weight";
+			$criteria = [
+				'parentId' => 0,
+				'type' => $parentId
+			];
+		}
+		$stmt = $conn->exec($sql, $criteria);
 		
-		if (is_numeric($parentId))
-			$sql = "SELECT * FROM groups WHERE parentId = '$parentId' ORDER BY weight";
-		else
-			$sql = "SELECT * FROM groups WHERE parentId = '0' AND type = '$parentId' ORDER BY weight";
-			
-		$result = $conn->exec($sql);
-		
-		while ($row = $conn->fetchArray($result))
-		{
+		foreach ( $stmt as $row ){
 			$spaces = $this->spaces($times);
 			if ($row['linkType'] != "Normal Group")
 			{
@@ -1082,27 +1062,25 @@ class Groups
 		}
 	}
 	
-	function isDeletable($id)
-	{
+	function isDeletable($id){
 		global $conn;
-	
-		$result = $this->getByParentId($id);
-		if ($conn->numRows($result) > 0)  //has a child group
+		$stmt = $this->getByParentId($id);
+		if ($stmt->rowCount() > 0)  //has a child group
 			return false;
-				
 		return true;
 	}
 	
-	function getLastWeight($type, $parentId)
-	{
+	function getLastWeight($type, $parentId){
 		global $conn;
-		
 		$sql = "SElECT weight FROM groups WHERE `type` = '$type' AND parentId = '$parentId' ORDER BY weight DESC LIMIT 1";
-		$result = $conn->exec($sql);
-		$numRows = $conn -> numRows($result);
-		if($numRows > 0)
-		{
-			$row = $conn->fetchArray($result);
+		$criteria = [
+			'type' => $type,
+			'parentId' => $parentId
+		];
+		$stmt = $conn->exec($sql, $criteria);
+		$numRows = $stmt->rowCount();
+		if($numRows > 0){
+			$row = $stmt->fetch();
 			return $row['weight'] + 10;
 		}
 		else
@@ -1222,10 +1200,13 @@ class Groups
 	{
 		global $conn;
 		
-		$sql = "SELECT COUNT(id) cnt FROM groups WHERE urlname = '$urlname' AND id <> '$id'";
-
-		$result = $conn->exec($sql);
-		$row = $conn -> fetchArray($result);
+		$sql = "SELECT COUNT(id) cnt FROM groups WHERE urlname = :urlname AND id <> :id";
+		$criteria = [
+			'urlname' => $urlname,
+			'id' => $id
+		];
+		$stmt = $conn->exec($sql, $criteria);
+		$row = $stmt -> fetch();
 		if($row['cnt'] > 0)
 		{
 			return false;
@@ -1332,15 +1313,6 @@ class Groups
 		$result = $conn->exec($sql);
 		
 		return $result;
-	}
-	
-	function deleteBill($id)
-	{  
-		global $conn;
-		$id = cleanQuery($id);
-		$result = $this->getByIdBill($id);
-		$sql = "DELETE FROM bills WHERE id = '$id'";
-		$conn->exec($sql);
 	}
 	
 	// procedures for management information system
